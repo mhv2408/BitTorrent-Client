@@ -36,9 +36,17 @@ func DecodeString(input string, idx int) (string, int) {
 }
 func DecodeInteger(input string, idx int) (int, int) {
 	res_int := 0
+	is_neg := false
+	if input[idx] == '-' {
+		is_neg = true
+		idx += 1
+	}
 	for input[idx] != byte('e') {
 		res_int = res_int*10 + int(input[idx]-'0')
 		idx += 1
+	}
+	if is_neg {
+		res_int *= -1
 	}
 	return res_int, idx + 1
 }
@@ -53,7 +61,7 @@ func DecodeList(input string, idx int) ([]any, int) {
 		} else if symbol == byte('i') { // it is an integer
 			list_item, idx = DecodeInteger(input, idx+1)
 		} else if symbol == byte('d') {
-			list_item, idx = DecodeDictionary(input, idx)
+			list_item, idx = DecodeDictionary(input, idx+1)
 		} else { // it is list itself
 			list_item, idx = DecodeList(input, idx+1)
 		}
@@ -64,20 +72,17 @@ func DecodeList(input string, idx int) ([]any, int) {
 }
 
 func GetValue(input string, idx int) (any, int) {
-	for true {
-		element := input[idx]
+	element := input[idx]
 
-		if unicode.IsDigit(rune(element)) {
-			return DecodeString(input, idx)
-		} else if element == byte('i') {
-			return DecodeInteger(input, idx)
-		} else if element == byte('l') {
-			return DecodeList(input, idx)
-		} else {
-			return DecodeDictionary(input, idx)
-		}
+	if unicode.IsDigit(rune(element)) {
+		return DecodeString(input, idx)
+	} else if element == byte('i') {
+		return DecodeInteger(input, idx+1)
+	} else if element == byte('l') {
+		return DecodeList(input, idx+1)
+	} else {
+		return DecodeDictionary(input, idx+1)
 	}
-	return nil, -1
 }
 
 func DecodeDictionary(input string, idx int) (map[string]any, int) {
@@ -85,12 +90,12 @@ func DecodeDictionary(input string, idx int) (map[string]any, int) {
 	res := make(map[string]any)
 
 	for input[idx] != byte('e') {
-		key, idx := DecodeString(input, idx)
-		value, idx := GetValue(input, idx)
-
+		var key string
+		var value any
+		key, idx = DecodeString(input, idx)
+		value, idx = GetValue(input, idx)
 		res[key] = value
 	}
-
-	return res, idx
+	return res, idx + 1
 
 }

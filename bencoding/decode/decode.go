@@ -47,21 +47,20 @@ func DecodeList(input string, idx int) ([]any, int) {
 	var res []any
 	for input[idx] != byte('e') {
 		symbol := input[idx]
-		var list_item interface{}
+		var list_item any
 		if unicode.IsDigit(rune(symbol)) { // it is string lenght starting
 			list_item, idx = DecodeString(input, idx)
 		} else if symbol == byte('i') { // it is an integer
-			list_item, idx = DecodeInteger(input, idx)
+			list_item, idx = DecodeInteger(input, idx+1)
 		} else if symbol == byte('d') {
 			list_item, idx = DecodeDictionary(input, idx)
 		} else { // it is list itself
-			list_item, idx = DecodeList(input, idx)
+			list_item, idx = DecodeList(input, idx+1)
 		}
 
 		res = append(res, list_item)
-
 	}
-	return res, idx
+	return res, idx + 1
 }
 
 func GetValue(input string, idx int) (any, int) {

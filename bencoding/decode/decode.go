@@ -1,38 +1,19 @@
 package decode
 
-import (
-	"unicode"
-)
-
 func Decode(input string) any {
-	var resultList []any
-	i := 0
-	for i < len(input) {
-		var resultItem any
-		symbol := input[i]
-		if unicode.IsDigit(rune(symbol)) {
-			resultItem, i = DecodeString(input, i)
-		} else if symbol == byte('i') {
-			resultItem, i = DecodeInteger(input, i+1)
-		} else if symbol == byte('l') {
-			resultItem, i = DecodeList(input, i+1)
-		} else {
-			resultItem, i = DecodeDictionary(input, i+1)
-		}
-		resultList = append(resultList, resultItem)
-	}
-	return resultList
+	res, _ := GetValue(input, 0)
+	return res
 }
 
 func DecodeString(input string, idx int) (string, int) {
-	len := 0
+	stringLength := 0
 	for input[idx] != byte(':') {
-		len = ((len * 10) + int(input[idx]-'0'))
+		stringLength = ((stringLength * 10) + int(input[idx]-'0'))
 		idx += 1
 	}
 	start := idx + 1
-	res_str := input[start : start+len]
-	return res_str, start + len
+	res_str := input[start : start+stringLength]
+	return res_str, start + stringLength
 }
 func DecodeInteger(input string, idx int) (int, int) {
 	res_int := 0
@@ -51,38 +32,13 @@ func DecodeInteger(input string, idx int) (int, int) {
 	return res_int, idx + 1
 }
 func DecodeList(input string, idx int) ([]any, int) {
-
 	var res []any
 	for input[idx] != byte('e') {
-		symbol := input[idx]
 		var list_item any
-		if unicode.IsDigit(rune(symbol)) { // it is string lenght starting
-			list_item, idx = DecodeString(input, idx)
-		} else if symbol == byte('i') { // it is an integer
-			list_item, idx = DecodeInteger(input, idx+1)
-		} else if symbol == byte('d') {
-			list_item, idx = DecodeDictionary(input, idx+1)
-		} else { // it is list itself
-			list_item, idx = DecodeList(input, idx+1)
-		}
-
+		list_item, idx = GetValue(input, idx)
 		res = append(res, list_item)
 	}
 	return res, idx + 1
-}
-
-func GetValue(input string, idx int) (any, int) {
-	element := input[idx]
-
-	if unicode.IsDigit(rune(element)) {
-		return DecodeString(input, idx)
-	} else if element == byte('i') {
-		return DecodeInteger(input, idx+1)
-	} else if element == byte('l') {
-		return DecodeList(input, idx+1)
-	} else {
-		return DecodeDictionary(input, idx+1)
-	}
 }
 
 func DecodeDictionary(input string, idx int) (map[string]any, int) {
@@ -98,4 +54,22 @@ func DecodeDictionary(input string, idx int) (map[string]any, int) {
 	}
 	return res, idx + 1
 
+}
+
+func GetValue(input string, idx int) (any, int) {
+
+	switch input[idx] {
+	case 'l':
+		return DecodeList(input, idx+1)
+
+	case 'i':
+		return DecodeInteger(input, idx+1)
+
+	case 'd':
+		return DecodeDictionary(input, idx+1)
+
+	default:
+		return DecodeString(input, idx)
+
+	}
 }

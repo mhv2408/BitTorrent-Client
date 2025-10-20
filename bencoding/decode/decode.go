@@ -1,11 +1,33 @@
 package decode
 
-import "unicode"
+import (
+	"unicode"
+)
+
+func Decode(input string) any {
+	var resultList []any
+	i := 0
+	for i < len(input) {
+		var resultItem any
+		symbol := input[i]
+		if unicode.IsDigit(rune(symbol)) {
+			resultItem, i = DecodeString(input, i)
+		} else if symbol == byte('i') {
+			resultItem, i = DecodeInteger(input, i+1)
+		} else if symbol == byte('l') {
+			resultItem, i = DecodeList(input, i+1)
+		} else {
+			resultItem, i = DecodeDictionary(input, i+1)
+		}
+		resultList = append(resultList, resultItem)
+	}
+	return resultList
+}
 
 func DecodeString(input string, idx int) (string, int) {
 	len := 0
 	for input[idx] != byte(':') {
-		len = (len * 10) + int(input[idx])
+		len = ((len * 10) + int(input[idx]-'0'))
 		idx += 1
 	}
 	start := idx + 1
@@ -15,14 +37,14 @@ func DecodeString(input string, idx int) (string, int) {
 func DecodeInteger(input string, idx int) (int, int) {
 	res_int := 0
 	for input[idx] != byte('e') {
-		res_int = res_int*10 + int(input[idx])
+		res_int = res_int*10 + int(input[idx]-'0')
 		idx += 1
 	}
 	return res_int, idx + 1
 }
-func DecodeList(input string, idx int) ([]interface{}, int) {
+func DecodeList(input string, idx int) ([]any, int) {
 
-	var res []interface{}
+	var res []any
 	for input[idx] != byte('e') {
 		symbol := input[idx]
 		var list_item interface{}
@@ -42,7 +64,7 @@ func DecodeList(input string, idx int) ([]interface{}, int) {
 	return res, idx
 }
 
-func GetValue(input string, idx int) (interface{}, int) {
+func GetValue(input string, idx int) (any, int) {
 	for true {
 		element := input[idx]
 
@@ -59,8 +81,9 @@ func GetValue(input string, idx int) (interface{}, int) {
 	return nil, -1
 }
 
-func DecodeDictionary(input string, idx int) (map[string]interface{}, int) {
-	var res map[string]interface{} // in bencoding there are only string keys
+func DecodeDictionary(input string, idx int) (map[string]any, int) {
+	// in bencoding there are only string keys
+	res := make(map[string]any)
 
 	for input[idx] != byte('e') {
 		key, idx := DecodeString(input, idx)

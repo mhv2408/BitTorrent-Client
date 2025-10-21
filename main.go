@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	"github.com/mhv2408/bencoding/decode"
@@ -57,6 +59,28 @@ func main() {
 
 	url := fmt.Sprintf("%s?info_hash=%s&peer_id=%s&port=6881&uploaded=0&downloaded=0&left=%d&compact=1", announceURL, infoHash, peerId, left)
 
-	fmt.Printf("Announce URL: <%s>", url)
+	fmt.Printf("Announce URL: <%s>\n", url)
+	resp := request(url)
+	rawOutput := decode.Decode(resp)
+	output, ok := rawOutput.(map[string]any)
+	if !ok {
+		log.Fatal("output is not map")
+	}
+	rawPeersData, ok := output["peers"]
+	if !ok {
+		log.Fatal("output does not contain peers")
+	}
+
+	peersString, ok := rawPeersData.(string)
+	if !ok {
+		log.Fatal("peersData is not a string")
+	}
+
+	peersData := []byte(peersString)
+	for i := 0; i+6 <= len(peersData); i += 6 {
+		ip := net.IPv4(peersData[i], peersData[i+1], peersData[i+2], peersData[i+3])
+		port := binary.BigEndian.Uint16(peersData[i+4 : i+6])
+		fmt.Printf("Peer: %s:%d\n", ip, port)
+	}
 
 }

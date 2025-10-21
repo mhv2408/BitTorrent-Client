@@ -44,7 +44,6 @@ func DecodeList(input string, idx int) ([]any, int) {
 func DecodeDictionary(input string, idx int) (map[string]any, int) {
 	// in bencoding there are only string keys
 	res := make(map[string]any)
-
 	for input[idx] != byte('e') {
 		var key string
 		var value any
